@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suffolk Team Activities</title>
+    <!-- Include Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <!-- Specify a height of 900px for the map container -->
+    <style>
+        #map {
+            height: 900px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Create a container for the map -->
+    <div id="map"></div>
+
+    <!-- Include Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Your JavaScript code -->
+    <script>
+        // Function to fetch and parse CSV data
+        async function fetchCSV(url) {
+            const response = await fetch(url);
+            const data = await response.text();
+            return data;
+        }
+
+        // Function to convert CSV data to JavaScript array
+        function convertCSVtoJavaScript(csv) {
+            const lines = csv.split('\n');
+            const headers = lines[0].split(',');
+
+            const townData = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const townEntry = {};
+
+                for (let j = 0; j < headers.length; j++) {
+                    const header = headers[j].trim();
+                    const value = values[j].trim();
+                    
+                    if (header === 'Latitude' || header === 'Longitude') {
+                        townEntry.coordinates = townEntry.coordinates || {};
+                        townEntry.coordinates[header.toLowerCase()] = parseFloat(value);
+                    } else {
+                        townEntry[header.toLowerCase()] = value;
+                    }
+                }
+
+                townData.push(townEntry);
+            }
+
+            return townData;
+        }
+
+        // Fetch CSV data and populate the map
+        async function initMap() {
+            const csvUrl = 'C:\\Users\\c.moffat\\Documents\\Live Site\\Town, Date and Work.csv'; // Replace with the correct path to your CSV file
+            const csvData = await fetchCSV(csvUrl);
+            const townData = convertCSVtoJavaScript(csvData);
+
+            // Initialize the map
+            const map = L.map('map').setView([52.100, 0.800], 9); // Centered around Suffolk
+
+            // Include a tile layer (you can choose different tile providers)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add markers for each town with correct coordinates, activity, and date information
+            townData.forEach(({ town, activity, date, coordinates }) => {
+                const marker = L.marker([coordinates.lat, coordinates.lng])
+                    .addTo(map)
+                    .bindPopup(`<strong>${town}</strong><br>Activity: ${activity}<br>Date: ${date}`);
+            });
+        }
+
+        // Call the initMap function to start the process
+        initMap();
+    </script>
+</body>
+</html>
